@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Notifications · Justice Connect{% endblock %}
+{% block topbar %}Notifications{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Notifications</h1><p class="muted">Updates about your cases and messages.</p></div>
+    <form method="post" action="{% url 'notifications:read_all' %}">{% csrf_token %}
+        <button class="btn btn-outline btn-sm" type="submit">Mark all as read</button></form>
+</div>
+<div class="card flush">
+    {% for n in notifications %}
+        <div class="notif{% if not n.is_read %} unread{% endif %}">
+            <div class="notif-body">
+                <span class="badge b-type">{{ n.get_type_display }}</span>
+                <p>{{ n.message|urlize }}</p>
+                <small class="muted">{{ n.created_at|timesince }} ago</small>
+            </div>
+            <form method="post" action="{% url 'notifications:read' n.pk %}">{% csrf_token %}
+                <button class="btn btn-outline btn-sm" type="submit">{% if n.case %}Open{% else %}Mark read{% endif %}</button>
+            </form>
+        </div>
+    {% empty %}<p class="empty">You have no notifications.</p>{% endfor %}
+</div>
+{% endblock %}

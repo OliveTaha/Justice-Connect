@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Browse Cases · Justice Connect{% endblock %}
+{% block topbar %}Browse cases{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Available cases</h1><p class="muted">Cases whose clients gave consent and still need a lawyer.</p></div></div>
+<form method="get" class="filters card">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search title, number or description">
+    <select name="type">
+        <option value="">All case types</option>
+        {% for value, label in type_choices %}<option value="{{ value }}" {% if case_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-primary btn-sm" type="submit">Search</button>
+</form>
+{% if cases %}
+<div class="cards">
+    {% for c in cases %}
+    <a class="case-card" href="{% url 'cases:detail' c.pk %}">
+        <div class="top"><span class="mono">{{ c.case_number }}</span><span class="badge b-open">{{ c.case_type }}</span></div>
+        <h4>{{ c.title }}</h4>
+        <p class="muted">{{ c.court.name }}</p>
+        <p class="excerpt">{{ c.description|truncatewords:22 }}</p>
+        {% if c.pk in requested_ids %}<p class="hint ok"><svg class="ic"><use href="#i-check"/></svg>You already requested this case</p>{% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% else %}<div class="card"><p class="empty">No available cases right now.</p></div>{% endif %}
+{% endblock %}

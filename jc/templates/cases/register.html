@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Register Case · Justice Connect{% endblock %}
+{% block topbar %}Register case{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Register a case</h1>
+    <p class="muted">The client account is created automatically. You decide whether the client is notified.</p></div></div>
+
+{% if not has_courts %}
+    <div class="alert warning"><svg class="ic"><use href="#i-alert"/></svg><span>No courts exist yet. <a href="{% url 'cases:courts' %}">Add an area and a court first.</a></span></div>
+{% endif %}
+
+<form method="post" class="card narrow" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}{% for e in form.non_field_errors %}<div class="alert error">{{ e }}</div>{% endfor %}{% endif %}
+    <div class="card-head"><h3>Case details</h3></div>
+    {% include 'partials/field.html' with field=form.court %}
+    {% include 'partials/field.html' with field=form.case_number %}
+    {% include 'partials/field.html' with field=form.title %}
+    {% include 'partials/field.html' with field=form.case_type %}
+    {% include 'partials/field.html' with field=form.description %}
+    <div class="card-head spaced"><h3>Client information</h3></div>
+    {% include 'partials/field.html' with field=form.client_name %}
+    {% include 'partials/field.html' with field=form.client_email %}
+    {% include 'partials/field.html' with field=form.client_phone %}
+    {% include 'partials/field.html' with field=form.client_address %}
+    <div class="notice-box">{% include 'partials/field.html' with field=form.notify_client %}</div>
+    <button type="submit" class="btn btn-primary">Register case</button>
+</form>
+{% endblock %}

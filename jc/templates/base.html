@@ -1,0 +1,114 @@
+{% load static ui %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1220">
+    <title>{% block title %}Justice Connect{% endblock %}</title>
+    <script>(function(){try{var t=localStorage.getItem("jc-theme");if(!t){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% include 'partials/app_css.html' %}
+</head>
+<body>
+{% include 'partials/icons.html' %}
+{% with vn=request.resolver_match.view_name %}
+<div class="shell">
+    <aside class="sidebar" id="sidebar">
+        <a class="brand" href="{% url 'accounts:dashboard' %}">
+            <span class="brand-icon"><svg class="ic"><use href="#i-scale"/></svg></span>
+            <span>Justice Connect</span>
+        </a>
+
+        <nav class="side-nav">
+            <p class="nav-label">Menu</p>
+            <a href="{% url 'accounts:dashboard' %}" class="{% if vn == 'accounts:dashboard' %}active{% endif %}"><svg class="ic"><use href="#i-home"/></svg>Dashboard</a>
+            {% if user.role == 'client' %}
+                <a href="{% url 'cases:my_cases' %}" class="{% if vn == 'cases:my_cases' %}active{% endif %}"><svg class="ic"><use href="#i-folder"/></svg>My Cases</a>
+                <a href="{% url 'accounts:lawyers' %}" class="{% if vn == 'accounts:lawyers' %}active{% endif %}"><svg class="ic"><use href="#i-award"/></svg>Top Lawyers</a>
+            {% elif user.role == 'lawyer' %}
+                <a href="{% url 'cases:available' %}" class="{% if vn == 'cases:available' %}active{% endif %}"><svg class="ic"><use href="#i-search"/></svg>Browse Cases</a>
+                <a href="{% url 'cases:my_requests' %}" class="{% if vn == 'cases:my_requests' %}active{% endif %}"><svg class="ic"><use href="#i-send"/></svg>My Requests</a>
+            {% else %}
+                <a href="{% url 'cases:register' %}" class="{% if vn == 'cases:register' %}active{% endif %}"><svg class="ic"><use href="#i-plus"/></svg>Register Case</a>
+                <a href="{% url 'cases:manage' %}" class="{% if vn == 'cases:manage' %}active{% endif %}"><svg class="ic"><use href="#i-folder"/></svg>Manage Cases</a>
+                <a href="{% url 'cases:courts' %}" class="{% if vn == 'cases:courts' %}active{% endif %}"><svg class="ic"><use href="#i-briefcase"/></svg>Courts &amp; Areas</a>
+                <a href="{% url 'accounts:lawyers' %}" class="{% if vn == 'accounts:lawyers' %}active{% endif %}"><svg class="ic"><use href="#i-award"/></svg>Lawyers</a>
+                {% if user.is_staff %}<a href="/admin/"><svg class="ic"><use href="#i-shield"/></svg>Admin Panel</a>{% endif %}
+            {% endif %}
+            <p class="nav-label">Account</p>
+            <a href="{% url 'notifications:list' %}" class="{% if vn == 'notifications:list' %}active{% endif %}"><svg class="ic"><use href="#i-bell"/></svg>Notifications
+                {% if unread_notifications_count %}<span class="pill">{{ unread_notifications_count }}</span>{% endif %}</a>
+            <a href="{% url 'accounts:settings' %}" class="{% if vn == 'accounts:settings' %}active{% endif %}"><svg class="ic"><use href="#i-settings"/></svg>Account Settings</a>
+        </nav>
+
+        <a class="side-user" href="{% url 'accounts:settings' %}">
+            {% avatar user %}
+            <div class="who"><strong>{{ user.display_name }}</strong><small>{{ user.get_role_display }}</small></div>
+        </a>
+    </aside>
+    <div class="side-backdrop" id="sideBackdrop"></div>
+
+    <div class="main-wrap">
+        <header class="topbar">
+            <button type="button" class="icon-btn menu-toggle" id="menuToggle" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+            <span class="topbar-title">{% block topbar %}Justice Connect{% endblock %}</span>
+            <span class="grow"></span>
+            <div class="lang">
+                <a href="{% url 'accounts:language' 'bn' %}" class="{% if lang == 'bn' %}active{% endif %}">বাংলা</a>
+                <a href="{% url 'accounts:language' 'en' %}" class="{% if lang != 'bn' %}active{% endif %}">EN</a>
+            </div>
+            <a class="icon-btn" href="{% url 'notifications:list' %}" title="Notifications" aria-label="Notifications">
+                <svg class="ic"><use href="#i-bell"/></svg>
+                {% if unread_notifications_count %}<span class="dot">{{ unread_notifications_count }}</span>{% endif %}
+            </a>
+            <div class="menu-wrap">
+                <button type="button" class="icon-btn" id="menuBtn" aria-label="More options" title="More"><svg class="ic"><use href="#i-more"/></svg></button>
+                <div class="menu" id="userMenu">
+                    <div class="menu-head">{% avatar user 'lg' %}<div><strong>{{ user.display_name }}</strong><small>{{ user.email }}</small></div></div>
+                    <a class="menu-item" href="{% url 'accounts:settings' %}"><svg class="ic"><use href="#i-settings"/></svg>Account settings</a>
+                    <button type="button" class="menu-item" data-theme-toggle><svg class="ic"><use href="#i-moon"/></svg>Dark mode<span class="switch"></span></button>
+                    <button type="button" class="menu-item" data-open-guide><svg class="ic"><use href="#i-book"/></svg>User guide</button>
+                    <div class="menu-sep"></div>
+                    <form method="post" action="{% url 'accounts:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="menu-item danger"><svg class="ic"><use href="#i-logout"/></svg>Log out</button>
+                    </form>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="footer">© 2026 Justice Connect · University project (simulation, not connected to real court systems)</footer>
+    </div>
+</div>
+{% endwith %}
+
+<div class="toasts" id="toasts">
+    {% for message in messages %}
+        <div class="toast {{ message.tags }}"><svg class="ic"><use href="#i-{% if message.tags == 'success' %}check{% elif message.tags == 'error' or message.tags == 'warning' %}alert{% else %}info{% endif %}"/></svg><span>{{ message }}</span><button type="button" class="toast-close" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    {% endfor %}
+</div>
+
+<div class="modal-backdrop" id="confirmModal">
+    <div class="modal">
+        <div class="modal-body">
+            <div class="modal-icon"><svg class="ic"><use href="#i-alert"/></svg></div>
+            <h3 id="cmTitle">Please confirm</h3>
+            <div id="cmText" class="modal-text"></div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-outline" id="cmCancel">Cancel</button>
+            <button type="button" class="btn btn-primary" id="cmOk">Confirm</button>
+        </div>
+    </div>
+</div>
+{% include 'partials/guide.html' %}
+<div class="lightbox" id="lightbox"></div>
+{% include 'partials/app_js.html' %}
+</body>
+</html>

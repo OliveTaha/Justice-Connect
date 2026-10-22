@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Manage Cases · Justice Connect{% endblock %}
+{% block topbar %}Manage cases{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Manage cases</h1><p class="muted">All cases registered in the system.</p></div>
+    <a class="btn btn-primary" href="{% url 'cases:register' %}"><svg class="ic"><use href="#i-plus"/></svg>Register case</a></div>
+
+<form method="get" class="filters card">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search case number, title or client">
+    <select name="status">
+        <option value="">All statuses</option>
+        {% for value, label in status_choices %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <select name="court">
+        <option value="">All courts</option>
+        {% for c in courts %}<option value="{{ c.pk }}" {% if court == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-primary btn-sm" type="submit">Filter</button>
+</form>
+
+<div class="card flush">
+{% if cases %}
+<div class="table-wrap">
+<table class="table">
+    <thead><tr><th>Case</th><th>Court</th><th>Client</th><th>Notified</th><th>Consent</th><th>Lawyer</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for c in cases %}
+        <tr>
+            <td><a href="{% url 'cases:detail' c.pk %}"><strong>{{ c.case_number }}</strong></a><br><small>{{ c.title }}</small></td>
+            <td>{{ c.court.name }}</td>
+            <td>{{ c.client.name }}<br><small>{% if c.client.account.is_verified %}Verified{% else %}Not verified{% endif %}</small></td>
+            <td>{% if c.client_notified %}<span class="badge b-accepted">Yes</span>{% else %}<span class="badge b-pending">Not yet</span>{% endif %}</td>
+            <td>{% if c.consent %}Yes{% else %}No{% endif %}</td>
+            <td>{{ c.assigned_lawyer.name|default:"—" }}</td>
+            <td><span class="badge b-{{ c.status }}">{{ c.get_status_display }}</span></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}<p class="empty">No cases found.</p>{% endif %}
+</div>
+{% endblock %}

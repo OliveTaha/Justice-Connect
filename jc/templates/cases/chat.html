@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load ui %}
+{% block title %}Chat · {{ case.case_number }}{% endblock %}
+{% block topbar %}Safe chat{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'cases:detail' case.pk %}"><svg class="ic"><use href="#i-arrow-left"/></svg>Back to case</a>
+<div class="page-head">
+    <div>
+        <h1>{{ other_label }}</h1>
+        <p class="muted">{{ case.title }} · <span class="mono">{{ case.case_number }}</span></p>
+    </div>
+    <span class="badge big b-{{ req.status }}">{{ req.get_status_display }}</span>
+</div>
+
+<div class="chat-layout">
+    <section class="card chat-card" id="chat" data-last="{{ last_id }}" data-status="{{ req.status }}"
+             data-poll="{% url 'cases:chat_poll' req.pk %}" data-max-mb="{{ max_mb }}" data-big="The file is too large (maximum 5 MB).">
+        {% if req.status != 'accepted' %}
+        <div class="safe-banner"><svg class="ic"><use href="#i-lock"/></svg>
+            <span><strong>Safe mode.</strong> Phone numbers and email addresses are hidden until the lawyer gives the final acceptance.</span></div>
+        {% else %}
+        <div class="safe-banner ok"><svg class="ic"><use href="#i-check"/></svg>
+            <span><strong>Final acceptance done.</strong> You can now share contact details in this chat.</span></div>
+        {% endif %}
+
+        <div class="chat-thread" id="thread">
+            <div class="bubble-row {% if is_lawyer %}mine{% endif %}">
+                <div class="bubble"><small class="tag">Request message</small><p>{{ req.message }}</p><small>{{ req.requested_at|date:"d M, H:i" }}</small></div>
+            </div>
+            {% for m in thread %}
+                <div class="bubble-row {% if m.mine %}mine{% endif %}" data-id="{{ m.id }}">
+                    <div class="bubble">
+                        {% if m.file %}
+                            {% if m.file.is_image %}
+                                <a class="att-img" href="{{ m.file.url }}" data-lightbox="1"><img src="{{ m.file.url }}" alt="{{ m.file.name }}" loading="lazy"></a>
+                            {% else %}
+                                <a class="att-file" href="{{ m.file.url }}"><svg class="ic"><use href="#i-file"/></svg><span><span class="nm">{{ m.file.name }}</span><small>{{ m.file.size|filesizeformat }}</small></span><svg class="ic"><use href="#i-download"/></svg></a>
+                            {% endif %}
+                        {% endif %}
+                        {% if m.body %}<p>{{ m.body }}</p>{% endif %}
+                        <small>{{ m.time }}</small>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if can_send %}
+        <form method="post" enctype="multipart/form-data" class="chat-form" id="chatForm" autocomplete="off">
+            {% csrf_token %}
+            <div class="attach-preview" id="attachPrev"></div>
+            <label class="attach-btn" for="chatFile" title="Attach a photo or file" aria-label="Attach a photo or file"><svg class="ic"><use href="#i-paperclip"/></svg></label>
+            <input type="file" id="chatFile" name="attachment" hidden accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.txt">
+            <textarea name="body" rows="1" maxlength="2000" placeholder="Write a message..."></textarea>
+            <button class="btn btn-primary send-btn" type="submit" id="sendBtn"><svg class="ic"><use href="#i-send"/></svg>Send</button>
+            <span class="chat-note">Photos, PDF, Word and text files up to 5 MB. Files are not scanned, so avoid sharing contact details before the final acceptance.</span>
+        </form>
+        {% else %}
+            <p class="empty">This conversation is closed.</p>
+        {% endif %}
+    </section>
+
+    <aside class="chat-side">
+        {% if is_client %}
+        {% with rating=req.lawyer.average_rating %}
+        <div class="card">
+            <div class="card-head"><h3>Lawyer</h3></div>
+            <div class="mini-profile">
+                {% avatar req.lawyer 'lg' %}
+                <div><strong>{{ req.lawyer.name }}</strong>
+                    <div class="req-meta">{{ rating|stars }}<span>{% if rating %}{{ rating }}{% else %}No reviews{% endif %}</span></div></div>
+            </div>
+            <dl class="details compact">
+                <dt>Solved</dt><dd>{{ req.lawyer.cases_solved }} case{{ req.lawyer.cases_solved|pluralize }}</dd>
+                <dt>Specialty</dt><dd>{{ req.lawyer.account.profile.specialization|default:"General practice" }}</dd>
+                <dt>Experience</dt><dd>{{ req.lawyer.account.profile.experience|default:0 }} years</dd>
+            </dl>
+            <a class="btn btn-outline btn-sm" href="{% url 'accounts:lawyer_detail' req.lawyer.pk %}">View full profile</a>
+        </div>
+        {% endwith %}
+        {% endif %}
+
+        <div class="card">
+            <div class="card-head"><h3>Decision</h3></div>
+            {% if req.status == 'accepted' %}
+                <p class="muted">The lawyer is assigned to this case.</p>
+            {% elif req.status == 'rejected' or req.status == 'withdrawn' %}
+                <p class="muted">This request is closed.</p>
+            {% elif is_client %}
+                {% if req.status == 'selected' %}<p class="muted" style="margin-bottom:12px">Waiting for the lawyer's final acceptance.</p>{% endif %}
+                <div class="actions">
+                    {% if req.selectable %}
+                    <form method="post" action="{% url 'cases:select_lawyer' req.pk %}"
+                          data-confirm="{{ req.lawyer.name }} will be asked for the final acceptance."
+                          data-confirm-title="Select this lawyer?" data-confirm-btn="Select lawyer">
+                        {% csrf_token %}<button class="btn btn-primary btn-block" type="submit">Select this lawyer</button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{% url 'cases:reject_request' req.pk %}"
+                          data-confirm="{{ req.lawyer.name }} will be told that the request was declined."
+                          data-confirm-title="Decline this request?" data-confirm-btn="Decline" data-danger="1">
+                        {% csrf_token %}<button class="btn btn-outline btn-block" type="submit">Decline request</button>
+                    </form>
+                </div>
+            {% else %}
+                {% if req.status == 'selected' %}
+                    <p class="muted" style="margin-bottom:12px">The client selected you. Accept to become the lawyer, or decline if the client seems suspicious.</p>
+                    <div class="actions">
+                        <form method="post" action="{% url 'cases:lawyer_accept' req.pk %}"
+                              data-confirm="After final acceptance the client's contact details are shared and you become the lawyer for this case."
+                              data-confirm-title="Final acceptance" data-confirm-btn="Accept case">
+                            {% csrf_token %}<button class="btn btn-primary btn-block" type="submit">Accept case (final)</button>
+                        </form>
+                        <form method="post" action="{% url 'cases:lawyer_decline' req.pk %}"
+                              data-confirm="You will not be able to take this case later."
+                              data-confirm-title="Decline this case?" data-confirm-btn="Decline case" data-danger="1">
+                            {% csrf_token %}<button class="btn btn-outline btn-block" type="submit">Decline case</button>
+                        </form>
+                    </div>
+                {% else %}
+                    <p class="muted" style="margin-bottom:12px">Chat with the client. If they select you, you will be asked for the final acceptance.</p>
+                    <form method="post" action="{% url 'cases:lawyer_decline' req.pk %}"
+                          data-confirm="Your request will be withdrawn."
+                          data-confirm-title="Withdraw request?" data-confirm-btn="Withdraw" data-danger="1">
+                        {% csrf_token %}<button class="btn btn-outline btn-block" type="submit">Withdraw request</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    </aside>
+</div>
+{% endblock %}

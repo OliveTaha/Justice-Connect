@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Courts · Justice Connect{% endblock %}
+{% block topbar %}Courts &amp; areas{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Courts &amp; areas</h1><p class="muted">Manage court information.</p></div></div>
+<div class="grid-2">
+    <form method="post" class="card" novalidate>
+        {% csrf_token %}
+        <div class="card-head"><h3>Add area</h3></div>
+        {% for field in area_form %}{% include 'partials/field.html' %}{% endfor %}
+        <button type="submit" name="save_area" class="btn btn-primary">Save area</button>
+    </form>
+    <form method="post" class="card" novalidate>
+        {% csrf_token %}
+        <div class="card-head"><h3>Add court</h3></div>
+        {% for field in court_form %}{% include 'partials/field.html' %}{% endfor %}
+        <button type="submit" name="save_court" class="btn btn-primary">Save court</button>
+    </form>
+</div>
+<div class="card flush">
+    <div class="card-head pad"><h3>All courts</h3></div>
+    {% if courts %}
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th>Court</th><th>Area</th><th>Address</th><th>Cases</th></tr></thead>
+        <tbody>{% for c in courts %}<tr><td><strong>{{ c.name }}</strong></td><td>{{ c.area.name }}</td><td>{{ c.address }}</td><td>{{ c.case_count }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="empty">No courts yet.</p>{% endif %}
+</div>
+{% endblock %}

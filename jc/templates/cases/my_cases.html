@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}My Cases · Justice Connect{% endblock %}
+{% block topbar %}My cases{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>My cases</h1><p class="muted">Cases registered for you by the court.</p></div></div>
+{% if cases %}
+<div class="cards">
+    {% for c in cases %}
+    <a class="case-card" href="{% url 'cases:detail' c.pk %}">
+        <div class="top"><span class="mono">{{ c.case_number }}</span><span class="badge b-{{ c.status }}">{{ c.get_status_display }}</span></div>
+        <h4>{{ c.title }}</h4>
+        <p class="muted">{{ c.court.name }} · {{ c.case_type }}</p>
+        {% if not c.consent %}<p class="hint warn"><svg class="ic"><use href="#i-alert"/></svg>Your consent is needed</p>
+        {% elif c.status == 'closed' %}<p class="hint ok"><svg class="ic"><use href="#i-check"/></svg>Solved{% if not c.review %} · please rate your lawyer{% endif %}</p>
+        {% elif c.assigned_lawyer %}<p class="hint ok"><svg class="ic"><use href="#i-check"/></svg>Lawyer: {{ c.assigned_lawyer.name }}</p>
+        {% else %}<p class="hint"><svg class="ic"><use href="#i-clock"/></svg>Waiting for lawyer requests</p>{% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% else %}<div class="card"><p class="empty">No case has been registered for you yet.</p></div>{% endif %}
+{% endblock %}

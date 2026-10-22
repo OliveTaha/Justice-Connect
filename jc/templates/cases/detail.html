@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% load ui %}
+{% block title %}{{ case.case_number }} · Justice Connect{% endblock %}
+{% block topbar %}Case {{ case.case_number }}{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <p class="crumb">{{ case.court.name }} · <span class="mono">{{ case.case_number }}</span></p>
+        <h1>{{ case.title }}</h1>
+    </div>
+    <div class="head-actions">
+        <span class="badge big b-{{ case.status }}">{{ case.get_status_display }}</span>
+        {% if can_close %}
+        <form method="post" action="{% url 'cases:close' case.pk %}"
+              data-confirm="Mark this case as solved? The client will be asked to rate the lawyer."
+              data-confirm-title="Mark case as solved" data-confirm-btn="Yes, case solved">
+            {% csrf_token %}<button class="btn btn-primary btn-sm" type="submit"><svg class="ic"><use href="#i-award"/></svg>Mark as solved</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+{# ---------------- advanced progress ---------------- #}
+<div class="card progress-card">
+    <div class="progress-top">
+        <div><h3>{{ progress.stage }}</h3><p class="muted">{{ progress.hint }}</p></div>
+        <span class="percent">{{ progress.percent }}%</span>
+    </div>
+    <div class="track"><div class="fill" style="--w:{{ progress.percent }}%"></div></div>
+    <ol class="steps">
+        {% for s in progress.steps %}
+        <li class="step {{ s.state }}">
+            <span class="dotc">{% if s.state == 'done' %}<svg class="ic"><use href="#i-check"/></svg>{% else %}{{ forloop.counter }}{% endif %}</span>
+            <strong>{{ s.label }}</strong>
+            <small>{{ s.desc }}</small>
+            {% if s.when %}<span class="when">{{ s.when|date:"d M Y, H:i" }}</span>{% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</div>
+
+{# ---------------- court staff: client notification control ---------------- #}
+{% if user.role == 'court_staff' or user.role == 'admin' %}
+    {% if not case.client_notified %}
+    <div class="card notice-card">
+        <div>
+            <h3>The client has not been notified</h3>
+            <p class="muted">This case is hidden from the client. Notify the client only when the court is ready (for sensitive cases the person must not be alerted early).</p>
+        </div>
+        <form method="post" action="{% url 'cases:notify_client' case.pk %}"
+              data-confirm="Send the notification (and verification link) to the client now?"
+              data-confirm-title="Notify client" data-confirm-btn="Notify client">
+            {% csrf_token %}<button class="btn btn-primary" type="submit">Notify client now</button>
+        </form>
+    </div>
+    {% endif %}
+{% endif %}
+
+{# ---------------- withdrawal request pending ---------------- #}
+{% if pending_withdrawal %}
+<div class="card withdraw-card">
+    <div class="card-head"><h3>{% if is_owner %}Your lawyer asked to leave this case{% elif is_assigned_to_me %}Your withdrawal request{% else %}Withdrawal request{% endif %}</h3>
+        <span class="badge b-pending">{{ pending_withdrawal.get_status_display }}</span></div>
+    <p class="quote">{{ pending_withdrawal.reason }}</p>
+    <p class="muted">Requested {{ pending_withdrawal.created_at|date:"d M Y, H:i" }}. If the client does not answer, the withdrawal happens automatically on <strong>{{ pending_withdrawal.auto_at|date:"d M Y, H:i" }}</strong> (in {{ pending_withdrawal.auto_at|timeuntil }}).</p>
+    {% if is_owner %}
+    <div class="btn-row" style="margin-top:14px">
+        <form method="post" action="{% url 'cases:respond_withdrawal' pending_withdrawal.pk %}"
+              data-confirm="{{ pending_withdrawal.lawyer.name }} will leave the case immediately and the case will be open for new lawyers again."
+              data-confirm-title="Allow the lawyer to leave?" data-confirm-btn="Allow withdrawal">
+            {% csrf_token %}<input type="hidden" name="decision" value="approve"><button class="btn btn-primary btn-sm" type="submit"><svg class="ic"><use href="#i-check"/></svg>Allow withdrawal</button>
+        </form>
+        <form method="post" action="{% url 'cases:respond_withdrawal' pending_withdrawal.pk %}"
+              data-confirm="The lawyer will stay on your case and the withdrawal will not happen."
+              data-confirm-title="Decline the request?" data-confirm-btn="Decline" data-danger="1">
+            {% csrf_token %}<input type="hidden" name="decision" value="decline"><button class="btn btn-outline btn-sm" type="submit"><svg class="ic"><use href="#i-x"/></svg>Decline</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="grid-2">
+    <div class="card">
+        <div class="card-head"><h3>Case information</h3></div>
+        <dl class="details">
+            <dt>Court</dt><dd>{{ case.court.name }} ({{ case.court.area.name }})</dd>
+            <dt>Case type</dt><dd>{{ case.case_type }}</dd>
+            <dt>Registered</dt><dd>{{ case.created_at|date:"d M Y" }}</dd>
+            <dt>Client consent</dt><dd>{% if case.consent %}Given on {{ case.consent_date|date:"d M Y" }}{% else %}Not given yet{% endif %}</dd>
+            <dt>Assigned lawyer</dt><dd>{% if case.assigned_lawyer %}{{ case.assigned_lawyer.name }}{% else %}—{% endif %}</dd>
+            {% if case.closed_at %}<dt>Solved on</dt><dd>{{ case.closed_at|date:"d M Y" }}</dd>{% endif %}
+        </dl>
+        <div class="card-head"><h3>Description</h3></div>
+        <p>{{ case.description|linebreaksbr }}</p>
+    </div>
+
+    <div class="card">
+        <div class="card-head"><h3>Client</h3></div>
+        {% if show_client_info %}
+            <dl class="details">
+                <dt>Name</dt><dd>{{ case.client.name }}</dd>
+                <dt>Email</dt><dd>{{ case.client.account.email }}</dd>
+                <dt>Phone</dt><dd>{{ case.client.phone|default:"—" }}</dd>
+                <dt>Address</dt><dd>{{ case.client.address|default:"—" }}</dd>
+                {% if not is_owner %}<dt>Account</dt><dd>{% if case.client.account.is_verified %}Verified{% else %}Not verified{% endif %}</dd>{% endif %}
+                <dt>Case record</dt><dd>{{ client_history.total }} case{{ client_history.total|pluralize }}, {{ client_history.solved }} solved</dd>
+            </dl>
+            {% if not is_owner and case.client_notified and not case.client.account.is_verified and user.role != 'lawyer' %}
+                <div class="sim-box">
+                    <strong>Simulated verification SMS</strong>
+                    <p>Send this link to the client:</p>
+                    <a href="{{ request.scheme }}://{{ request.get_host }}{{ case.client.account.verification_path }}">{{ request.scheme }}://{{ request.get_host }}{{ case.client.account.verification_path }}</a>
+                </div>
+            {% endif %}
+        {% else %}
+            <p class="empty">Client details stay private until you give the final acceptance.</p>
+            {% if user.role == 'lawyer' %}<p class="note-small" style="text-align:center">Client record: {{ client_history.total }} case{{ client_history.total|pluralize }}, {{ client_history.solved }} solved</p>{% endif %}
+        {% endif %}
+    </div>
+</div>
+
+{# ---------------- deadlines ---------------- #}
+{% if deadlines or user.role == 'court_staff' or user.role == 'admin' %}
+<div class="card">
+    <div class="card-head"><h3>Deadlines</h3></div>
+    {% for d in deadlines %}
+        <div class="deadline">
+            <div><strong>{{ d.title }}</strong><small class="muted">{{ d.due_at|date:"d M Y, H:i" }}{% if d.note %} · {{ d.note }}{% endif %}</small></div>
+            <div class="btn-row">
+                {% if case.status == 'closed' %}<span class="due">Case solved</span>
+                {% elif d.is_overdue %}<span class="due over">Overdue</span>
+                {% else %}<span class="due">in {{ d.due_at|timeuntil }}</span>{% endif %}
+                {% if user.role == 'court_staff' or user.role == 'admin' %}
+                <form method="post" action="{% url 'cases:delete_deadline' d.pk %}" data-confirm="This deadline will be removed." data-confirm-title="Remove deadline?" data-confirm-btn="Remove" data-danger="1">
+                    {% csrf_token %}<button class="icon-btn" type="submit" aria-label="Remove"><svg class="ic"><use href="#i-trash"/></svg></button></form>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}<p class="empty">No deadlines have been set for this case.</p>{% endfor %}
+    {% if user.role == 'court_staff' or user.role == 'admin' %}
+    <details class="fold"><summary>Add a deadline<svg class="ic"><use href="#i-chevron-down"/></svg></summary>
+        <div class="fold-body">
+            <form method="post" action="{% url 'cases:add_deadline' case.pk %}" novalidate>
+                {% csrf_token %}
+                {% include 'partials/field.html' with field=deadline_form.title %}
+                {% include 'partials/field.html' with field=deadline_form.due_at %}
+                {% include 'partials/field.html' with field=deadline_form.note %}
+                <button class="btn btn-primary btn-sm" type="submit"><svg class="ic"><use href="#i-calendar"/></svg>Save deadline</button>
+            </form>
+        </div>
+    </details>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ---------------- CLIENT: consent ---------------- #}
+{% if is_owner and not case.consent %}
+<div class="card consent-box">
+    <div class="card-head"><h3>Your consent is required</h3></div>
+    <p>If you agree, this case becomes visible to verified lawyers who can then send you requests. Your contact details stay private until a lawyer gives the final acceptance.</p>
+    <form method="post" action="{% url 'cases:consent' case.pk %}"
+          data-confirm="Verified lawyers will be able to see this case and send you requests. Your contact details stay private."
+          data-confirm-title="Allow lawyers to see this case?" data-confirm-btn="Yes, I give my consent">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">I give my consent</button>
+    </form>
+</div>
+{% endif %}
+
+{# ---------------- LAWYER panel ---------------- #}
+{% if user.role == 'lawyer' %}
+<div class="card">
+    {% if case.status == 'closed' and is_assigned_to_me %}
+        <div class="card-head"><h3>Case solved</h3></div>
+        <p>This case is marked as solved.</p>
+        {% if review %}<div class="review"><div class="review-top">{{ review.rating|stars }}<small>Client review</small></div>{% if review.comment %}<p>{{ review.comment }}</p>{% endif %}</div>{% endif %}
+    {% elif is_assigned_to_me %}
+        <div class="card-head"><h3>You are the assigned lawyer</h3></div>
+        <p>You gave the final acceptance. The client's contact details are shown above.</p>
+        <div class="btn-row">{% if my_request %}<a class="btn btn-outline" href="{% url 'cases:chat' my_request.pk %}"><svg class="ic"><use href="#i-message"/></svg>Open chat</a>{% endif %}</div>
+        {% if not pending_withdrawal %}
+        <details class="fold"><summary>Need to leave this case?<svg class="ic"><use href="#i-chevron-down"/></svg></summary>
+            <div class="fold-body">
+                <p class="muted" style="margin-bottom:12px">Explain the reason. The client can allow it (you leave at once) or decline it. If the client does not answer, you leave automatically after the waiting time.</p>
+                <form method="post" action="{% url 'cases:request_withdrawal' case.pk %}" novalidate
+                      data-confirm="The client will be asked to allow your withdrawal. You stay on the case until the client allows it or the waiting time ends."
+                      data-confirm-title="Ask to withdraw from this case?" data-confirm-btn="Send request" data-danger="1">
+                    {% csrf_token %}
+                    {% include 'partials/field.html' with field=withdrawal_form.reason %}
+                    <button class="btn btn-outline btn-sm" type="submit">Ask to withdraw</button>
+                </form>
+            </div>
+        </details>
+        {% endif %}
+    {% elif my_request %}
+        <div class="card-head"><h3>Your request</h3><span class="badge b-{{ my_request.status }}">{{ my_request.get_status_display }}</span></div>
+        <p class="quote">{{ my_request.message }}</p>
+        {% if my_request.status == 'selected' %}
+            <div class="notice-box"><strong>The client selected you.</strong> Check the chat and decide. If anything looks suspicious you can decline before final acceptance.</div>
+            <div class="btn-row">
+                <form method="post" action="{% url 'cases:lawyer_accept' my_request.pk %}"
+                      data-confirm="After final acceptance the client's contact details are shared and you become the lawyer for this case."
+                      data-confirm-title="Final acceptance" data-confirm-btn="Accept case">
+                    {% csrf_token %}<button class="btn btn-primary" type="submit"><svg class="ic"><use href="#i-check"/></svg>Accept case</button>
+                </form>
+                <form method="post" action="{% url 'cases:lawyer_decline' my_request.pk %}"
+                      data-confirm="You will not be able to take this case later."
+                      data-confirm-title="Decline this case?" data-confirm-btn="Decline case" data-danger="1">
+                    {% csrf_token %}<button class="btn btn-outline" type="submit"><svg class="ic"><use href="#i-x"/></svg>Decline</button>
+                </form>
+                <a class="btn btn-outline" href="{% url 'cases:chat' my_request.pk %}"><svg class="ic"><use href="#i-message"/></svg>Chat</a>
+            </div>
+        {% elif my_request.status == 'pending' %}
+            <div class="btn-row">
+                <a class="btn btn-primary" href="{% url 'cases:chat' my_request.pk %}"><svg class="ic"><use href="#i-message"/></svg>Chat with client</a>
+                <form method="post" action="{% url 'cases:lawyer_decline' my_request.pk %}"
+                      data-confirm="Your request will be withdrawn."
+                      data-confirm-title="Withdraw request?" data-confirm-btn="Withdraw" data-danger="1">
+                    {% csrf_token %}<button class="btn btn-outline" type="submit">Withdraw request</button>
+                </form>
+            </div>
+        {% endif %}
+    {% elif can_request %}
+        <div class="card-head"><h3>Request this case</h3></div>
+        <form method="post" action="{% url 'cases:request_case' case.pk %}" novalidate>
+            {% csrf_token %}
+            {% include 'partials/field.html' with field=request_form.message %}
+            <button class="btn btn-primary" type="submit"><svg class="ic"><use href="#i-send"/></svg>Send request</button>
+        </form>
+    {% else %}
+        <p class="empty">This case is no longer open for requests.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ---------------- REVIEW (client) ---------------- #}
+{% if is_owner and case.status == 'closed' %}
+<div class="card">
+    <div class="card-head"><h3>Your review</h3></div>
+    {% if review %}
+        <div class="review"><div class="review-top">{{ review.rating|stars }}<small>{{ review.created_at|date:"d M Y" }}</small></div>
+        {% if review.comment %}<p>{{ review.comment }}</p>{% endif %}</div>
+    {% elif can_review %}
+        <p class="muted">How was your experience with {{ case.assigned_lawyer.name }}?</p>
+        <form method="post" action="{% url 'cases:review' case.pk %}">
+            {% csrf_token %}
+            <div class="star-input">
+                {% for i in "54321" %}
+                    <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" required>
+                    <label for="star{{ i }}" title="{{ i }} star{{ i|pluralize }}"><svg class="ic star"><use href="#i-star"/></svg></label>
+                {% endfor %}
+            </div>
+            <div class="field"><label for="comment">Comment (optional)</label>
+                <textarea name="comment" id="comment" rows="3" maxlength="1000" placeholder="Share your experience..."></textarea></div>
+            <button class="btn btn-primary" type="submit">Submit review</button>
+        </form>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ---------------- LAWYER REQUESTS (client / staff) ---------------- #}
+{% if case_requests is not None %}
+<div class="card">
+    <div class="card-head"><h3>Lawyer requests ({{ case_requests|length }})</h3></div>
+    {% if is_owner and case.consent and not case.assigned_lawyer %}
+        <p class="muted flow-hint">Chat with each lawyer in safe mode first. When you are ready, select one lawyer. That lawyer then gives the final acceptance.</p>
+    {% endif %}
+    {% for r in case_requests %}
+    {% with rating=r.lawyer.average_rating %}
+        <div class="req-card">
+            {% avatar r.lawyer 'lg' %}
+            <div class="req-main">
+                <div class="req-title"><strong>{{ r.lawyer.name }}</strong><span class="badge b-{{ r.status }}">{{ r.get_status_display }}</span></div>
+                <div class="req-meta">
+                    {{ rating|stars }}
+                    <span>{% if rating %}{{ rating }} ({{ r.lawyer.review_count }}){% else %}No reviews yet{% endif %}</span>
+                    <span class="sep">·</span><span>{{ r.lawyer.cases_solved }} case{{ r.lawyer.cases_solved|pluralize }} solved</span>
+                    <span class="sep">·</span><span>{{ r.lawyer.account.profile.specialization|default:"General practice" }}</span>
+                    <span class="sep">·</span><span>{{ r.lawyer.account.profile.experience|default:0 }} yr exp.</span>
+                </div>
+                <p class="quote">{{ r.message }}</p>
+            </div>
+            {% if is_owner %}
+            <div class="req-actions">
+                {% if r.status != 'rejected' and r.status != 'withdrawn' %}<a class="btn btn-outline btn-sm" href="{% url 'cases:chat' r.pk %}"><svg class="ic"><use href="#i-message"/></svg>Chat</a>{% endif %}
+                <a class="btn btn-outline btn-sm" href="{% url 'accounts:lawyer_detail' r.lawyer.pk %}">Profile</a>
+                {% if r.selectable %}
+                    <form method="post" action="{% url 'cases:select_lawyer' r.pk %}"
+                          data-confirm="{{ r.lawyer.name }} will be asked for the final acceptance. Other requests stay open until then."
+                          data-confirm-title="Select this lawyer?" data-confirm-btn="Select lawyer">
+                        {% csrf_token %}<button class="btn btn-primary btn-sm" type="submit">Select</button>
+                    </form>
+                {% endif %}
+                {% if r.is_open %}
+                    <form method="post" action="{% url 'cases:reject_request' r.pk %}"
+                          data-confirm="{{ r.lawyer.name }} will be told that the request was declined."
+                          data-confirm-title="Decline this request?" data-confirm-btn="Decline" data-danger="1">
+                        {% csrf_token %}<button class="btn btn-outline btn-sm" type="submit">Decline</button>
+                    </form>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    {% endwith %}
+    {% empty %}
+        <p class="empty">No lawyer has requested this case yet.</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+{# ---------------- timeline ---------------- #}
+<div class="card">
+    <div class="card-head"><h3>Activity timeline</h3></div>
+    <ul class="timeline">
+        {% for e in progress.timeline %}
+        <li class="tl-item" style="animation-delay:{{ forloop.counter0 }}00ms">
+            <span class="tl-ic"><svg class="ic"><use href="#i-{{ e.icon }}"/></svg></span>
+            <div class="tl-body"><strong>{{ e.title }}</strong><small>{% if e.text %}{{ e.text }} · {% endif %}{{ e.when|date:"d M Y, H:i" }}</small></div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

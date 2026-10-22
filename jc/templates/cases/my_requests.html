@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}My Requests · Justice Connect{% endblock %}
+{% block topbar %}My requests{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>My requests</h1><p class="muted">Track your requests and chat with clients.</p></div></div>
+<div class="card flush">
+{% if requests %}
+<div class="table-wrap">
+<table class="table">
+    <thead><tr><th>Case</th><th>Court</th><th>Requested</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for r in requests %}
+        <tr{% if r.status == 'selected' %} class="row-alert"{% endif %}>
+            <td><a href="{% url 'cases:detail' r.case.pk %}"><strong>{{ r.case.case_number }}</strong></a><br><small>{{ r.case.title }}</small></td>
+            <td>{{ r.case.court.name }}</td>
+            <td>{{ r.requested_at|date:"d M Y, H:i" }}</td>
+            <td><span class="badge b-{{ r.status }}">{{ r.get_status_display }}</span>
+                {% if r.status == 'selected' %}<br><small class="hint warn">Your final decision is needed</small>{% endif %}</td>
+            <td class="right">
+                {% if r.status != 'rejected' and r.status != 'withdrawn' %}<a class="btn btn-outline btn-sm" href="{% url 'cases:chat' r.pk %}"><svg class="ic"><use href="#i-message"/></svg>Chat</a>{% endif %}
+                <a class="btn btn-outline btn-sm" href="{% url 'cases:detail' r.case.pk %}">Open</a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}<p class="empty">You have not sent any request yet. <a href="{% url 'cases:available' %}">Browse available cases</a>.</p>{% endif %}
+</div>
+{% endblock %}

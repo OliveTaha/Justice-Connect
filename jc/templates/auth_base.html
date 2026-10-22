@@ -1,0 +1,39 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{% block title %}Justice Connect{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% include 'partials/auth_css.html' %}
+    <style>.auth-page{background-image:url("{% static 'assets/lawyer.jpg' %}")}</style>
+</head>
+<body>
+{% include 'partials/icons.html' %}
+<main class="auth-page">
+    <div class="overlay"></div>
+    <div class="lang">
+        <a href="{% url 'accounts:language' 'bn' %}" class="{% if lang == 'bn' %}active{% endif %}">বাংলা</a>
+        <a href="{% url 'accounts:language' 'en' %}" class="{% if lang != 'bn' %}active{% endif %}">EN</a>
+    </div>
+    <div class="content">
+        <section class="intro">
+            <div class="logo"><span class="logo-icon"><svg class="ic"><use href="#i-scale"/></svg></span><span>Justice Connect</span></div>
+            <p class="small-title">JUSTICE • TRUST • CONNECTION</p>
+            <h1>Connecting You<br>With the Right<br><span>Legal Expert.</span></h1>
+            <p class="description">Court-registered cases, verified clients and trusted lawyers, connected through one secure platform.</p>
+        </section>
+
+        <section class="auth-card">
+            {% for message in messages %}<div class="alert {{ message.tags }}">{{ message }}</div>{% endfor %}
+            {% block card %}{% endblock %}
+            <div class="secure-login"><svg class="ic"><use href="#i-lock"/></svg><p>Your information is securely protected.</p></div>
+        </section>
+    </div>
+    <footer>© 2026 Justice Connect. All rights reserved.</footer>
+</main>
+{% include 'partials/app_js.html' %}
+</body>
+</html>
