@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load ui %}
+{% block title %}Dashboard · Justice Connect{% endblock %}
+{% block topbar %}Dashboard{% endblock %}
+{% block content %}
+<section class="hero">
+    <div>
+        <p class="eyebrow">{% now "l, d F Y" %}</p>
+        <h1>Welcome back, {{ user.display_name|first_word }}</h1>
+        <p>{% if user.role == 'client' %}Track your cases, chat with lawyers and stay on top of court deadlines.{% elif user.role == 'lawyer' %}Find new cases, talk to clients and keep your track record growing.{% else %}Register cases, set deadlines and follow every case from one place.{% endif %}</p>
+        <div class="hero-actions">
+            {% if user.role == 'client' %}
+                <a class="btn btn-gold" href="{% url 'cases:my_cases' %}"><svg class="ic"><use href="#i-folder"/></svg>My Cases</a>
+                <a class="btn btn-outline" href="{% url 'accounts:lawyers' %}"><svg class="ic"><use href="#i-award"/></svg>Top Lawyers</a>
+            {% elif user.role == 'lawyer' %}
+                <a class="btn btn-gold" href="{% url 'cases:available' %}"><svg class="ic"><use href="#i-search"/></svg>Browse Cases</a>
+                <a class="btn btn-outline" href="{% url 'cases:my_requests' %}"><svg class="ic"><use href="#i-send"/></svg>My Requests</a>
+            {% else %}
+                <a class="btn btn-gold" href="{% url 'cases:register' %}"><svg class="ic"><use href="#i-plus"/></svg>Register Case</a>
+                <a class="btn btn-outline" href="{% url 'cases:manage' %}"><svg class="ic"><use href="#i-folder"/></svg>Manage Cases</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="hero-art"><svg class="ic"><use href="#i-scale"/></svg></div>
+</section>
+
+{% for w in pending_withdrawals %}
+<div class="card notice-card">
+    <div><h3>{{ w.lawyer.name }} asked to leave case {{ w.case.case_number }}</h3>
+        <p class="muted">Please respond. If you do not answer, it happens automatically on {{ w.auto_at|date:"d M Y, H:i" }}.</p></div>
+    <a class="btn btn-primary" href="{% url 'cases:detail' w.case.pk %}">Review request</a>
+</div>
+{% endfor %}
+
+<section class="stats">
+    {% for label, value, icon in stats %}
+        <div class="stat-card">
+            <span class="stat-icon"><svg class="ic"><use href="#i-{{ icon }}"/></svg></span>
+            <div><div class="number">{{ value }}</div><div class="label">{{ label }}</div></div>
+        </div>
+    {% endfor %}
+</section>
+
+<div class="grid-2">
+    <div class="card flush">
+        <div class="card-head pad"><h3>{% if user.role == 'lawyer' %}Newest available cases{% elif user.role == 'client' %}My recent cases{% else %}Recent cases{% endif %}</h3></div>
+        {% if recent_cases %}
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th>Case</th><th>Court</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for c in recent_cases %}
+                <tr>
+                    <td><a href="{% url 'cases:detail' c.pk %}"><strong>{{ c.case_number }}</strong></a><br><small>{{ c.title }}</small></td>
+                    <td>{{ c.court.name }}</td>
+                    <td><span class="badge b-{{ c.status }}">{{ c.get_status_display }}</span></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table></div>
+        {% else %}<p class="empty">No cases to show yet.</p>{% endif %}
+    </div>
+
+    <div class="card">
+        {% if user.role == 'lawyer' %}
+            <div class="card-head"><h3>My recent requests</h3></div>
+            {% for r in recent_requests %}
+                <div class="row-item">
+                    <a href="{% url 'cases:detail' r.case.pk %}"><strong>{{ r.case.case_number }}</strong></a>
+                    <span class="badge b-{{ r.status }}">{{ r.get_status_display }}</span>
+                </div>
+            {% empty %}<p class="empty">You have not requested any case yet.</p>{% endfor %}
+            {% if lawyer %}
+            <div class="rating-box">
+                {{ lawyer.average_rating|stars }}
+                <span>{% if lawyer.average_rating %}{{ lawyer.average_rating }} from {{ lawyer.review_count }} review{{ lawyer.review_count|pluralize }}{% else %}No reviews yet{% endif %}</span>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="card-head"><h3>Upcoming deadlines</h3></div>
+            {% for d in deadlines %}
+                <div class="deadline">
+                    <div><strong>{{ d.title }}</strong><small class="muted"><a href="{% url 'cases:detail' d.case.pk %}">{{ d.case.case_number }}</a> · {{ d.due_at|date:"d M Y, H:i" }}</small></div>
+                    {% if d.is_overdue %}<span class="due over">Overdue</span>{% else %}<span class="due">in {{ d.due_at|timeuntil }}</span>{% endif %}
+                </div>
+            {% empty %}<p class="empty">No deadlines set.</p>{% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+{% if user.role == 'lawyer' and deadlines %}
+<div class="card">
+    <div class="card-head"><h3>Upcoming deadlines</h3></div>
+    {% for d in deadlines %}
+        <div class="deadline">
+            <div><strong>{{ d.title }}</strong><small class="muted"><a href="{% url 'cases:detail' d.case.pk %}">{{ d.case.case_number }}</a> · {{ d.due_at|date:"d M Y, H:i" }}</small></div>
+            {% if d.is_overdue %}<span class="due over">Overdue</span>{% else %}<span class="due">in {{ d.due_at|timeuntil }}</span>{% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if user.role == 'client' %}
+<div class="grid-2">
+    <div class="card">
+        <div class="card-head"><h3>Know your rights</h3><span class="badge b-type">Constitution of Bangladesh</span></div>
+        <p class="muted" style="margin:-6px 0 8px">Fundamental rights in Part III (Articles 27–44).</p>
+        <details class="acc" open><summary><span class="art">Art. 27</span>Equality before law<svg class="ic"><use href="#i-chevron-down"/></svg></summary>
+            <p>All citizens are equal before law and are entitled to equal protection of law.</p></details>
+        <details class="acc"><summary><span class="art">Art. 31</span>Right to protection of law<svg class="ic"><use href="#i-chevron-down"/></svg></summary>
+            <p>Every person has the right to enjoy the protection of the law and to be treated only in accordance with law.</p></details>
+        <details class="acc"><summary><span class="art">Art. 33</span>Safeguards on arrest<svg class="ic"><use href="#i-chevron-down"/></svg></summary>
+            <p>A person who is arrested must be told the grounds of arrest as soon as possible, may consult and be defended by a lawyer of their choice, and must be brought before a magistrate within 24 hours (not counting travel time). Special exceptions exist, for example under preventive detention laws.</p></details>
+        <details class="acc"><summary><span class="art">Art. 35</span>Fair trial<svg class="ic"><use href="#i-chevron-down"/></svg></summary>
+            <p>A person accused of a crime has the right to a speedy and public trial by an independent and impartial court. Torture and cruel, inhuman or degrading punishment are prohibited.</p></details>
+        <details class="acc"><summary><span class="art">Art. 43</span>Privacy<svg class="ic"><use href="#i-chevron-down"/></svg></summary>
+            <p>Every citizen has the right to be secure in their home against entry, search and seizure, and to privacy of correspondence and communication, subject to reasonable legal restrictions.</p></details>
+        <details class="acc"><summary><span class="art">Art. 44</span>Going to court for your rights<svg class="ic"><use href="#i-chevron-down"/></svg></summary>
+            <p>You can move the High Court Division of the Supreme Court to enforce your fundamental rights.</p></details>
+        <p class="note-small">General information only, not legal advice. Official laws: bdlaws.minlaw.gov.bd</p>
+    </div>
+
+    <div>
+        <div class="card">
+            <div class="card-head"><h3>Free legal aid</h3></div>
+            <div class="helpline"><svg class="ic" style="width:30px;height:30px"><use href="#i-phone"/></svg>
+                <div><strong>16430</strong><small>National Legal Aid Services Organization helpline</small></div></div>
+            <p class="muted">If you cannot afford a lawyer you may be eligible for free government legal aid. Call the helpline for guidance.</p>
+        </div>
+        <div class="card">
+            <div class="card-head"><h3>My case history</h3></div>
+            <div class="mini-stats">
+                <div><strong>{{ history.total }}</strong><small>Total cases</small></div>
+                <div><strong>{{ history.solved }}</strong><small>Solved</small></div>
+                <div><strong>{{ history.active }}</strong><small>In progress</small></div>
+            </div>
+            <p class="note-small">Your case record stays in the court system even if you delete your account later.</p>
+            <a class="btn btn-outline btn-sm" style="margin-top:12px" href="{% url 'accounts:lawyers' %}"><svg class="ic"><use href="#i-award"/></svg>See top lawyers</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
