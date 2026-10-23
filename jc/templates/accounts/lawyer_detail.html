@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load ui %}
+{% block title %}{{ lawyer.name }} · Justice Connect{% endblock %}
+{% block topbar %}Lawyer profile{% endblock %}
+{% block content %}
+<a class="back" href="javascript:history.back()"><svg class="ic"><use href="#i-arrow-left"/></svg>Back</a>
+
+<div class="card profile-head">
+    {% avatar lawyer 'xl' %}
+    <div class="profile-main">
+        <h1>{{ lawyer.name }}</h1>
+        <p class="muted">{{ profile.specialization|default:"General practice" }}{% if profile.location %} · {{ profile.location }}{% endif %}</p>
+        <div class="rating-line">
+            {{ lawyer.average_rating|stars }}
+            <span>{% if lawyer.average_rating %}<strong>{{ lawyer.average_rating }}</strong> ({{ lawyer.review_count }} review{{ lawyer.review_count|pluralize }}){% else %}No reviews yet{% endif %}</span>
+        </div>
+    </div>
+    {% if lawyer.account.is_verified %}<span class="badge b-accepted">Verified lawyer</span>{% endif %}
+</div>
+
+<section class="stats">
+    <div class="stat-card"><span class="stat-icon"><svg class="ic"><use href="#i-award"/></svg></span><div><div class="number">{{ lawyer.cases_solved }}</div><div class="label">Cases solved</div></div></div>
+    <div class="stat-card"><span class="stat-icon"><svg class="ic"><use href="#i-star"/></svg></span><div><div class="number small">{{ lawyer.average_rating|default:"—" }}</div><div class="label">Average rating</div></div></div>
+    <div class="stat-card"><span class="stat-icon"><svg class="ic"><use href="#i-briefcase"/></svg></span><div><div class="number">{{ profile.experience|default:0 }}</div><div class="label">Years of experience</div></div></div>
+    <div class="stat-card"><span class="stat-icon"><svg class="ic"><use href="#i-shield"/></svg></span><div><div class="number small">{{ lawyer.bar_id }}</div><div class="label">Bar ID</div></div></div>
+</section>
+
+<div class="grid-2">
+    <div class="card">
+        <div class="card-head"><h3>About</h3></div>
+        <p>{{ profile.bio|default:"No bio provided."|linebreaksbr }}</p>
+        {% if user.id == lawyer.account_id %}<a class="btn btn-outline btn-sm" style="margin-top:14px" href="{% url 'accounts:settings' %}">Edit in account settings</a>{% endif %}
+    </div>
+    <div class="card">
+        <div class="card-head"><h3>Client reviews</h3></div>
+        {% for r in reviews %}
+            <div class="review">
+                <div class="review-top">{{ r.rating|stars }}<small>{{ r.client.name|first_word }} · {{ r.created_at|date:"d M Y" }}</small></div>
+                {% if r.comment %}<p>{{ r.comment }}</p>{% endif %}
+            </div>
+        {% empty %}<p class="empty">No reviews yet.</p>{% endfor %}
+    </div>
+</div>
+{% endblock %}
