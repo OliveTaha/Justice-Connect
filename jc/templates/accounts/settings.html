@@ -1,85 +1,17 @@
-{% extends 'base.html' %}
-{% load ui %}
-{% block title %}Account Settings · Justice Connect{% endblock %}
-{% block topbar %}Account settings{% endblock %}
-{% block content %}
-<div class="page-head"><div><h1>Account settings</h1><p class="muted">{{ user.email }} · {{ user.get_role_display }}</p></div></div>
-
-<div class="settings" data-active="{{ tab }}">
-    <nav class="settings-nav">
-        <button type="button" data-tab-btn="profile"><svg class="ic"><use href="#i-user"/></svg>Profile</button>
-        <button type="button" data-tab-btn="security"><svg class="ic"><use href="#i-lock"/></svg>Security</button>
-        <button type="button" data-tab-btn="preferences"><svg class="ic"><use href="#i-globe"/></svg>Preferences</button>
-        {% if user.role == 'client' %}<button type="button" class="danger" data-tab-btn="danger"><svg class="ic"><use href="#i-trash"/></svg>Delete account</button>{% endif %}
-    </nav>
-
-    <div>
-        <section class="tab-panel" data-tab="profile">
-            <form method="post" enctype="multipart/form-data" class="card" novalidate>
-                {% csrf_token %}<input type="hidden" name="action" value="profile">
-                <div class="card-head"><h3>Your profile</h3></div>
-                <div class="photo-row">
-                    <span id="photoPreview">{% avatar user 'xl' %}</span>
-                    <div>
-                        <div class="btn-row">
-                            <span class="btn btn-outline btn-sm file-btn"><svg class="ic"><use href="#i-camera"/></svg>Change photo{{ profile_form.photo }}</span>
-                            {% if profile.photo %}<label class="check" style="margin:0"><input type="checkbox" name="remove_photo"> <span>Remove current photo</span></label>{% endif %}
-                        </div>
-                        <small class="help">JPG or PNG, up to 2 MB.</small>
-                        {% for e in profile_form.photo.errors %}<small class="error">{{ e }}</small>{% endfor %}
-                    </div>
-                </div>
-                {% for field in profile_form %}{% if field.name != 'photo' and field.name != 'remove_photo' %}{% include 'partials/field.html' %}{% endif %}{% endfor %}
-                <button type="submit" class="btn btn-primary">Save changes</button>
-            </form>
-        </section>
-
-        <section class="tab-panel" data-tab="security">
-            <form method="post" class="card" novalidate>
-                {% csrf_token %}<input type="hidden" name="action" value="password">
-                <div class="card-head"><h3>Change password</h3></div>
-                {% for field in password_form %}{% include 'partials/field.html' %}{% endfor %}
-                <button type="submit" class="btn btn-primary">Update password</button>
-            </form>
-        </section>
-
-        <section class="tab-panel" data-tab="preferences">
-            <div class="card">
-                <div class="card-head"><h3>Preferences</h3></div>
-                <div class="pref-row"><div><strong>Language</strong><p class="muted">Choose the language of the site.</p></div>
-                    <div class="seg"><a href="{% url 'accounts:language' 'bn' %}" class="{% if lang == 'bn' %}active{% endif %}">বাংলা</a><a href="{% url 'accounts:language' 'en' %}" class="{% if lang != 'bn' %}active{% endif %}">English</a></div></div>
-                <div class="pref-row"><div><strong>Appearance</strong><p class="muted">Switch between light and dark mode.</p></div>
-                    <div class="seg"><button type="button" data-theme-set="light">Light</button><button type="button" data-theme-set="dark">Dark</button></div></div>
-                <div class="pref-row"><div><strong>User guide</strong><p class="muted">See how to use the site again.</p></div>
-                    <button type="button" class="btn btn-outline btn-sm" data-open-guide><svg class="ic"><use href="#i-book"/></svg>Open guide</button></div>
-            </div>
-        </section>
-
-        {% if user.role == 'client' %}
-        <section class="tab-panel" data-tab="danger">
-            <div class="card danger-zone">
-                <div class="card-head"><h3>Delete my account</h3></div>
-                <p>You can delete your account once all your cases are solved.</p>
-                <ul>
-                    <li>You will be logged out and cannot log in again.</li>
-                    <li>Your past case record ({{ client.total_cases }} case{{ client.total_cases|pluralize }}, {{ client.solved_cases }} solved) stays in the court system.</li>
-                    <li>If a court registers a new case for your email, the record is linked again.</li>
-                    <li>Your profile photo and bio are removed.</li>
-                </ul>
-                {% if can_delete %}
-                <form method="post" novalidate
-                      data-confirm="This is an important decision. | Your account will be closed and you will be logged out immediately. | You will not be able to log in again unless a court registers a new case for your email. | Your past case record stays in the court system and will be linked again if you have a new case. | Your profile photo and bio will be deleted."
-                      data-confirm-title="Delete your account?" data-confirm-btn="Yes, delete my account" data-danger="1">
-                    {% csrf_token %}<input type="hidden" name="action" value="delete">
-                    {% for field in delete_form %}{% include 'partials/field.html' %}{% endfor %}
-                    <button type="submit" class="btn btn-danger"><svg class="ic"><use href="#i-trash"/></svg>Delete my account</button>
-                </form>
-                {% else %}
-                    <div class="alert warning"><svg class="ic"><use href="#i-alert"/></svg><span>You can delete your account only after all your cases are solved.</span></div>
-                {% endif %}
-            </div>
-        </section>
-        {% endif %}
-    </div>
+{% extends 'auth_base.html' %}
+{% block title %}Verify account{% endblock %}
+{% block card %}
+<div class="card-header">
+    <h2>Verify your account</h2>
+    <p>Hello {{ account.display_name }}, confirm your account to continue.</p>
 </div>
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% if needs_password %}
+        <p class="muted-text">Your account was created for you by the court. Choose a password to finish setting it up.</p>
+        {% include 'partials/field.html' with field=form.password %}
+        {% include 'partials/field.html' with field=form.confirm_password %}
+    {% endif %}
+    <button type="submit" class="btn-primary">Verify &amp; continue</button>
+</form>
 {% endblock %}
