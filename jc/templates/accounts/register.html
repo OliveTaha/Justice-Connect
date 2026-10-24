@@ -1,0 +1,19 @@
+{% extends 'auth_base.html' %}
+{% block title %}Justice Connect - Lawyer Sign Up{% endblock %}
+{% block card %}
+<div class="card-header">
+    <h2>Lawyer Sign Up</h2>
+    <p>Create your account and verify it to start browsing cases.</p>
+</div>
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% include 'partials/field.html' with field=form.name %}
+    {% include 'partials/field.html' with field=form.email %}
+    {% include 'partials/field.html' with field=form.bar_id %}
+    {% include 'partials/field.html' with field=form.password %}
+    {% include 'partials/field.html' with field=form.confirm_password %}
+    <button type="submit" class="btn-primary">Create Account</button>
+</form>
+<div class="divider"><span>OR</span></div>
+<p class="alt-link">Already have an account? <a href="{% url 'accounts:login' %}">Sign In</a></p>
+{% endblock %}
