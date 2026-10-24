@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load ui %}
+{% block title %}Top Lawyers · Justice Connect{% endblock %}
+{% block topbar %}Top lawyers{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Top lawyers</h1><p class="muted">Verified lawyers ranked by client rating and solved cases.</p></div></div>
+<form method="get" class="filters card">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, specialization or location">
+    <select name="sort">
+        <option value="rating" {% if sort == 'rating' %}selected{% endif %}>Highest rated</option>
+        <option value="solved" {% if sort == 'solved' %}selected{% endif %}>Most cases solved</option>
+        <option value="experience" {% if sort == 'experience' %}selected{% endif %}>Most experienced</option>
+    </select>
+    <button class="btn btn-primary btn-sm" type="submit">Apply</button>
+</form>
+{% if rows %}
+<div class="dir-grid">
+    {% for row in rows %}
+    <div class="lawyer-card">
+        <span class="rank {% if forloop.counter <= 3 %}r{{ forloop.counter }}{% endif %}">{{ forloop.counter }}</span>
+        <div class="lawyer-top">
+            {% avatar row.lawyer 'lg' %}
+            <div><h4>{{ row.lawyer.name }}</h4>
+                <p class="muted" style="margin:0">{{ row.profile.specialization|default:"General practice" }}{% if row.profile.location %} · {{ row.profile.location }}{% endif %}</p></div>
+        </div>
+        <div class="req-meta">{{ row.rating|stars }}<span>{% if row.rating %}{{ row.rating }} ({{ row.reviews }}){% else %}No reviews yet{% endif %}</span></div>
+        <div class="mini-stats">
+            <div><strong>{{ row.solved }}</strong><small>Solved</small></div>
+            <div><strong>{{ row.experience }}</strong><small>Years</small></div>
+            <div><strong>{{ row.reviews }}</strong><small>Reviews</small></div>
+        </div>
+        <a class="btn btn-outline btn-sm" href="{% url 'accounts:lawyer_detail' row.lawyer.pk %}">View profile</a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}<div class="card"><p class="empty">No lawyers found.</p></div>{% endif %}
+{% endblock %}
