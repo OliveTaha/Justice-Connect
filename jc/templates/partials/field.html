@@ -1,0 +1,19 @@
+{% if field.field.widget.input_type == 'checkbox' %}
+<div class="field field-check">
+    <label class="check" for="{{ field.id_for_label }}">{{ field }} <span>{{ field.label }}</span></label>
+    {% if field.help_text %}<small class="help">{{ field.help_text }}</small>{% endif %}
+    {% for e in field.errors %}<small class="error">{{ e }}</small>{% endfor %}
+</div>
+{% else %}
+<div class="field{% if field.errors %} has-error{% endif %}">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    <div class="input-wrap">
+        {{ field }}
+        {% if field.field.widget.input_type == 'password' %}
+            <button type="button" class="toggle-pw" aria-label="Show or hide password"><svg class="ic"><use href="#i-eye"/></svg></button>
+        {% endif %}
+    </div>
+    {% for e in field.errors %}<small class="error">{{ e }}</small>{% endfor %}
+    {% if field.help_text %}<small class="help">{{ field.help_text }}</small>{% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,47 @@
+{% load ui %}
+<div class="modal-backdrop" id="guideModal" data-done-url="{% url 'accounts:guide_done' %}" {% if show_guide %}data-auto="1"{% endif %}>
+  <div class="modal guide">
+    <div class="guide-slides">
+      {% if user.role == 'client' %}
+        <section class="slide active"><div class="modal-icon"><svg class="ic"><use href="#i-scale"/></svg></div>
+          <h3>Welcome to Justice Connect</h3><p>This short guide shows how to use the site. The court registers your case, and this platform helps you find the right lawyer safely.</p></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-folder"/></svg></div>
+          <h3>1. Open your case and give consent</h3><p>Your cases are listed in My Cases. Open a case and give your consent so verified lawyers can see it. Your phone number and address stay hidden.</p></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-message"/></svg></div>
+          <h3>2. Chat with lawyers in safe mode</h3><p>Lawyers send you requests. You can chat, send files and photos, and check each lawyer's rating and solved cases.</p>
+          <ul><li>Phone numbers and emails are hidden until the final acceptance.</li><li>Select one lawyer. The lawyer then gives the final acceptance or declines.</li></ul></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-clock"/></svg></div>
+          <h3>3. Follow the progress</h3><p>The progress bar and timeline show every step of your case. Deadlines set by the court appear on your dashboard and in notifications.</p>
+          <ul><li>If your lawyer asks to leave the case, you can allow or decline. No answer means the withdrawal happens automatically.</li></ul></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-more"/></svg></div>
+          <h3>4. Your tools</h3><p>The three-dot menu (top right) has language, dark mode, account settings and log out. Use Top Lawyers to see the best rated lawyers. After your case is solved you can rate your lawyer and delete your account if you wish.</p></section>
+      {% elif user.role == 'lawyer' %}
+        <section class="slide active"><div class="modal-icon"><svg class="ic"><use href="#i-scale"/></svg></div>
+          <h3>Welcome to Justice Connect</h3><p>Find court-registered cases whose clients have given their consent, and build your track record.</p></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-search"/></svg></div>
+          <h3>1. Browse and request</h3><p>Open Browse Cases, read the details and send a request with a short message. The client's identity stays private at this stage.</p></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-message"/></svg></div>
+          <h3>2. Chat in safe mode</h3><p>Talk to the client, send files and photos. Contact details are hidden until you give the final acceptance. If the client seems suspicious you can decline.</p></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-check"/></svg></div>
+          <h3>3. Final acceptance and withdrawal</h3><p>When the client selects you, give the final acceptance. If you must leave a running case, send a withdrawal request with a reason. If the client does not answer in time it happens automatically.</p></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-award"/></svg></div>
+          <h3>4. Solve cases, earn reviews</h3><p>Mark the case as solved. Your solved cases and client ratings appear on your public profile. Update your photo and details in Account Settings.</p></section>
+      {% else %}
+        <section class="slide active"><div class="modal-icon"><svg class="ic"><use href="#i-scale"/></svg></div>
+          <h3>Welcome to Justice Connect</h3><p>Register cases and follow them until a lawyer solves them.</p></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-plus"/></svg></div>
+          <h3>Register a case</h3><p>Enter the case and the client details. The client account is created automatically. For sensitive cases, untick "Notify the client now" and notify later.</p></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-calendar"/></svg></div>
+          <h3>Set deadlines</h3><p>On a case page add deadlines such as hearings or document submission. The client and lawyer can see them and get a reminder.</p></section>
+        <section class="slide"><div class="modal-icon"><svg class="ic"><use href="#i-folder"/></svg></div>
+          <h3>Follow every case</h3><p>Manage Cases lists all cases with their progress. Open one to see its timeline, requests and assigned lawyer.</p></section>
+      {% endif %}
+    </div>
+    <div class="guide-check"><input type="checkbox" id="guideDont"><label for="guideDont">Don't show this guide again at login</label></div>
+    <div class="guide-foot">
+      <div class="dots">{% if user.role == 'client' or user.role == 'lawyer' %}<i class="active"></i><i></i><i></i><i></i><i></i>{% else %}<i class="active"></i><i></i><i></i><i></i>{% endif %}</div>
+      <div class="btn-row"><button type="button" class="btn btn-outline btn-sm" id="gPrev">Back</button><button type="button" class="btn btn-primary btn-sm" id="gNext" data-next="Next" data-done="Got it">Next</button></div>
+    </div>
+    <button type="button" id="gClose" class="icon-btn" style="position:absolute;top:12px;right:12px" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+</div>

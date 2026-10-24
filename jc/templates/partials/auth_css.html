@@ -1,0 +1,90 @@
+<style>
+{% verbatim %}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --gold: #c9a45c; --white: #fff; }
+body { font-family: "Inter", sans-serif; min-height: 100vh; }
+
+.auth-page {
+    min-height: 100vh; position: relative; display: flex; flex-direction: column;
+    background-color: #0b1220;
+    background-image: url("../assets/lawyer.jpg");
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+.overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,15,30,.88) 0%, rgba(7,15,30,.68) 45%, rgba(7,15,30,.40) 100%); }
+.content { position: relative; z-index: 2; width: min(1200px, 92%); margin: auto; padding: 40px 0; display: grid; grid-template-columns: 1fr 450px; align-items: center; gap: 80px; }
+
+.intro { color: var(--white); }
+.logo { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 700; margin-bottom: 90px; }
+.logo-icon { width: 42px; height: 42px; border: 1px solid rgba(201,164,92,.8); border-radius: 10px; display: flex; justify-content: center; align-items: center; color: var(--gold); }
+.logo-icon .ic { width: 24px; height: 24px; }
+.small-title { color: var(--gold); font-size: 13px; font-weight: 700; letter-spacing: 3px; margin-bottom: 18px; }
+.intro h1 { font-family: "Playfair Display", serif; font-size: clamp(42px, 5vw, 66px); line-height: 1.08; margin-bottom: 25px; }
+.intro h1 span { color: var(--gold); }
+.description { max-width: 540px; color: rgba(255,255,255,.78); font-size: 16px; line-height: 1.8; }
+
+.auth-card { background: rgba(255,255,255,.96); border-radius: 22px; padding: 38px 42px; box-shadow: 0 25px 70px rgba(0,0,0,.35); animation: cardAppear .7s ease; }
+@keyframes cardAppear { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
+.card-header { margin-bottom: 26px; }
+.card-header h2 { color: #111827; font-size: 30px; margin-bottom: 8px; }
+.card-header p { color: #6b7280; font-size: 14px; line-height: 1.6; }
+
+.field { margin-bottom: 18px; }
+.field label { display: block; color: #374151; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.input-wrap { position: relative; display: flex; align-items: center; }
+.field input { width: 100%; height: 50px; padding: 0 44px 0 15px; border: 1px solid #e5e7eb; border-radius: 11px; background: #f9fafb; font-family: inherit; font-size: 14px; outline: none; transition: .25s; }
+.field input:focus { background: #fff; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,164,92,.12); }
+.has-error input { border-color: #dc2626; }
+.ic { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.toggle-pw { position: absolute; right: 8px; border: none; background: transparent; cursor: pointer; color: #6b7280; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
+.error { display: block; color: #dc2626; font-size: 12px; margin-top: 5px; }
+.remember { display: flex; align-items: center; gap: 8px; color: #6b7280; font-size: 13px; margin: 4px 0 22px; cursor: pointer; }
+.remember input { accent-color: var(--gold); width: 15px; height: 15px; }
+
+.btn-primary { display: block; width: 100%; height: 52px; border: none; border-radius: 11px; background: #172033; color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: .25s; text-align: center; line-height: 52px; text-decoration: none; }
+.btn-primary:hover { background: #252f45; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(23,32,51,.2); text-decoration: none; }
+.btn-block { margin-top: 16px; }
+
+.divider { display: flex; align-items: center; gap: 12px; margin: 24px 0 18px; color: #9ca3af; font-size: 11px; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #e5e7eb; }
+.alt-link { text-align: center; color: #6b7280; font-size: 13px; margin-bottom: 6px; }
+.alt-link a { color: #a17c32; font-weight: 600; text-decoration: none; }
+.muted, .muted-text { color: #9ca3af; font-size: 12px; }
+.muted-text { margin-bottom: 16px; line-height: 1.6; }
+
+.alert { padding: 11px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; border: 1px solid; }
+.alert.success { background: #f0fdf4; border-color: #bbf7d0; color: #16a34a; }
+.alert.error { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+.alert.info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.sim-box { background: #fffbeb; border: 1px dashed var(--gold); border-radius: 12px; padding: 14px 16px; font-size: 13px; word-break: break-all; color: #374151; }
+.sim-box p { margin: 6px 0; }
+.sim-box a { color: #a17c32; }
+
+.secure-login { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 22px; padding-top: 18px; border-top: 1px solid #eee; color: #9ca3af; }
+.secure-login p { font-size: 11px; }
+.secure-login .ic { width: 15px; height: 15px; }
+footer { position: relative; z-index: 2; text-align: center; color: rgba(255,255,255,.55); font-size: 11px; padding: 20px; }
+
+@media (max-width: 900px) {
+    .content { grid-template-columns: 1fr; gap: 40px; padding: 50px 0; }
+    .intro { text-align: center; }
+    .logo { justify-content: center; margin-bottom: 35px; }
+    .description { margin: auto; }
+    .auth-card { width: min(450px, 100%); margin: auto; }
+}
+@media (max-width: 500px) {
+    .auth-card { padding: 30px 22px; border-radius: 18px; }
+    .intro h1 { font-size: 40px; }
+}
+
+.lang{position:absolute;top:18px;right:22px;z-index:5;display:inline-flex;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px;backdrop-filter:blur(6px)}
+.lang a{padding:4px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:#fff;text-decoration:none;transition:.2s}
+.lang a.active{background:#fff;color:#0b1220}
+.field input[type=checkbox]{width:auto}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.intro{animation:rise .8s cubic-bezier(.2,.8,.2,1) both}
+.btn-primary{transition:transform .2s,box-shadow .2s,background .2s}
+.btn-primary:active{transform:scale(.98)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+body{font-family:"Inter","Noto Sans Bengali",system-ui,sans-serif}
+{% endverbatim %}
+</style>
