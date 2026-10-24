@@ -1,0 +1,24 @@
+{% extends 'auth_base.html' %}
+{% block title %}Justice Connect - Sign In{% endblock %}
+{% block card %}
+<div class="card-header">
+    <h2>Welcome Back</h2>
+    <p>Sign in to access your Justice Connect account.</p>
+</div>
+
+{% if form.non_field_errors %}
+    {% for e in form.non_field_errors %}<div class="alert error">{{ e }}</div>{% endfor %}
+{% endif %}
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% include 'partials/field.html' with field=form.email %}
+    {% include 'partials/field.html' with field=form.password %}
+    <label class="remember">{{ form.remember }} <span>Remember me</span></label>
+    <button type="submit" class="btn-primary">Sign In</button>
+</form>
+
+<div class="divider"><span>OR</span></div>
+<p class="alt-link">Are you a lawyer? <a href="{% url 'accounts:register' %}">Create a lawyer account</a></p>
+<p class="alt-link muted">Clients receive their account automatically when a court registers their case.</p>
+{% endblock %}
