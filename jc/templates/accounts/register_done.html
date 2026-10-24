@@ -1,0 +1,14 @@
+{% extends 'auth_base.html' %}
+{% block title %}Verify your account{% endblock %}
+{% block card %}
+<div class="card-header">
+    <h2>Almost there!</h2>
+    <p>Your account was created. Please verify it to continue.</p>
+</div>
+<div class="sim-box">
+    <strong>Simulated verification message</strong>
+    <p>In a real system this link would be emailed / sent by SMS to <b>{{ account.email }}</b>:</p>
+    <a href="{{ account.verification_url }}">{{ account.verification_url }}</a>
+</div>
+<a class="btn-primary btn-block" href="{{ account.verification_url }}">Verify my account</a>
+{% endblock %}
